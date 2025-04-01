@@ -50,6 +50,22 @@ async function createScene() {
   // I don't know how to read sheet music or how to play a piano
   // but I looked up some stuff online and this is what the white keys of an octave are
 
+  // audio file map
+  const noteAudioMap = {
+    C4: 'sounds/C4.mp3',
+    Db4: 'sounds/Db4.mp3',
+    D4: 'sounds/D4.mp3',
+    Eb4: 'sounds/Eb4.mp3',
+    E4: 'sounds/E4.mp3',
+    F4: 'sounds/F4.mp3',
+    Gb4: 'sounds/Gb4.mp3',
+    G4: 'sounds/G4.mp3',
+    Ab4: 'sounds/Ab4.mp3',
+    A4: 'sounds/A4.mp3',
+    Bb4: 'sounds/Bb4.mp3',
+    B4: 'sounds/B4.mp3',
+  };
+
   // White key info
   const whiteKeys = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
   // Basic sizes for each key box
@@ -69,12 +85,19 @@ async function createScene() {
     );
     key.position.x = startX + i * whiteWidth;
     key.position.y = 0.4; // float it a bit above the ground
-    key.material = whiteMat;
+
+    // Clone the white material so each key can highlight individually
+    key.material = whiteMat.clone(`${note}_mat`);
+
+    // Add interaction using the full note name (like "C4")
+    addKeyInteraction(key, note + '4', scene);
   });
 
   // Black key info
   // The null entries mark places where black keys don't exist, like E-F and B-C.
-  const blackKeys = ['C#', 'D#', null, 'F#', 'G#', 'A#', null];
+  const blackKeys = ['Db4', 'Eb4', null, 'Gb4', 'Ab4', 'Bb4', null];
+  // I could only find the mp3 files labeled flat and such. They are the same so I just changed the names here
+
   const blackWidth = 0.12,
     blackDepth = 0.6,
     blackHeight = 0.12;
@@ -92,8 +115,71 @@ async function createScene() {
     blackKey.position.x = startX + (i + 1) * whiteWidth - whiteWidth / 2;
     blackKey.position.y = 0.4 + blackHeight / 2;
     blackKey.position.z = -(whiteDepth - blackDepth) / 2;
-    blackKey.material = blackMat;
+
+    // Cloning the black material so each black key can highlight individually
+    blackKey.material = blackMat.clone(`${note}_mat`);
+
+    // Add interaction
+    addKeyInteraction(blackKey, note, scene);
   });
+
+  // Function that sets up highlight and playing the sound
+  function addKeyInteraction(mesh, noteName, sceneRef) {
+    // Mark the mesh as pickable for VR/desktop clicks
+    mesh.isPickable = true;
+    mesh.actionManager = new BABYLON.ActionManager(sceneRef);
+
+    // On hover, set a faint emissive color to highlight
+    mesh.actionManager.registerAction(
+      new BABYLON.InterpolateValueAction(
+        BABYLON.ActionManager.OnPointerOverTrigger,
+        mesh.material,
+        'emissiveColor',
+        BABYLON.Color3.Gray(), // faint highlight
+        150
+      )
+    );
+
+    // On pointer out, remove highlight
+    mesh.actionManager.registerAction(
+      new BABYLON.InterpolateValueAction(
+        BABYLON.ActionManager.OnPointerOutTrigger,
+        mesh.material,
+        'emissiveColor',
+        BABYLON.Color3.Black(),
+        150
+      )
+    );
+
+    // On click
+    mesh.actionManager.registerAction(
+      new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, () => {
+        playNote(noteName);
+
+        // Simple press effect
+        const originalY = mesh.position.y;
+        mesh.position.y = originalY - 0.03;
+        setTimeout(() => {
+          mesh.position.y = originalY;
+        }, 150);
+      })
+    );
+  }
+
+  function playNote(note) {
+    const soundUrl = noteAudioMap[note];
+    if (!soundUrl) return;
+    const noteSound = new BABYLON.Sound(
+      note + '_sound',
+      soundUrl,
+      scene,
+      null,
+      {
+        volume: 1.0,
+        autoplay: true,
+      }
+    );
+  }
 
   // Basic WebXR setup
   const xrHelper = await scene.createDefaultXRExperienceAsync({
