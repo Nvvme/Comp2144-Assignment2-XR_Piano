@@ -2,7 +2,7 @@
 
 const canvas = document.getElementById('renderCanvas');
 // attaching the BABYLON 3d engine to the canvas
-const engine = new BABYLON.Engine(canvas, true);
+const engine = new BABYLON.Engine(canvas, true, { audioEngine: true }); // All I had to do was add this line and it works now :)
 
 // Manually unlocking the audio engine
 if (!BABYLON.Engine.audioEngine) {
