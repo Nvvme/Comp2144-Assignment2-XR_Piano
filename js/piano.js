@@ -4,6 +4,12 @@ const canvas = document.getElementById('renderCanvas');
 // attaching the BABYLON 3d engine to the canvas
 const engine = new BABYLON.Engine(canvas, true);
 
+// Manually unlocking the audio engine
+if (!BABYLON.Engine.audioEngine) {
+  BABYLON.Engine.audioEngine = new BABYLON.AudioEngine();
+  console.log(' Manually initialized audio engine. :|');
+}
+
 async function createScene() {
   const scene = new BABYLON.Scene(engine);
 
