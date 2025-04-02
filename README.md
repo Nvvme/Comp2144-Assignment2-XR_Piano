@@ -1,0 +1,6 @@
+![XR_Piano](https://github.com/user-attachments/assets/19a12991-01c4-44d8-97a9-46768a0eb17e)
+# Project Reflections & Next Steps
+
+Working on this XR piano prototype has been a great learning experience. One of the first challenges I ran into was figuring out how piano keys are actually arranged. I mentioned in Assignment 1 that I don’t know how to play piano or read sheet music, so getting the layout and positioning right (especially between white and black keys) took some trial and error. Another tricky part was managing how the audio playback works in the browser, especially with all the quirks around unlocking audio on user interaction. Getting Babylon.js to respond the way I expected (especially for hover effects and click animations) also took a fair bit of tweaking.
+
+Now that the basic VR version is up and running, my next step is to explore moving the piano experience into AR. Ideally making it feel like you could drop a working keyboard on your desk or table. I would also like to improve the visual design of the piano (better materials, key shapes, etc.), add more functionality (like note labels or maybe a simple tutorials), and maybe expand the keyboard to include more octaves. There is also room to refine the tactile feel and interaction. So that it feels a little more like actually pressing a key.
