@@ -46,6 +46,9 @@ async function createScene() {
 
   // now for the Piano
 
+  // spacing between white keys
+  const keyGap = 0.002;
+
   // One material for white keys, one for black
   const whiteMat = new BABYLON.StandardMaterial('whiteMat', scene);
   whiteMat.diffuseColor = new BABYLON.Color3(1, 1, 1);
@@ -82,6 +85,10 @@ async function createScene() {
   // Start position in X this will help to keep it centered
   const startX = -(whiteKeys.length / 2) * whiteWidth;
 
+  // center across total width = keys*width + gaps*(keys–1)
+  const totalW =
+    whiteKeys.length * whiteWidth + (whiteKeys.length - 1) * keyGap;
+
   // Making the white keys
   whiteKeys.forEach((note, i) => {
     const key = BABYLON.MeshBuilder.CreateBox(
@@ -89,7 +96,7 @@ async function createScene() {
       { width: whiteWidth, height: whiteHeight, depth: whiteDepth },
       scene
     );
-    key.position.x = startX + i * whiteWidth;
+    key.position.x = startX + i * (whiteWidth + keyGap);
     key.position.y = 0.4; // float it a bit above the ground
 
     // Clone the white material so each key can highlight individually
@@ -118,10 +125,10 @@ async function createScene() {
       scene
     );
     // Position it between the white keys, slightly behind
-    blackKey.position.x = startX + (i + 1) * whiteWidth - whiteWidth / 2;
+    blackKey.position.x =
+      startX + (i + 1) * (whiteWidth + keyGap) - (whiteWidth + keyGap) / 2;
     blackKey.position.y = 0.4 + blackHeight / 2;
-    blackKey.position.z = -(whiteDepth - blackDepth) / 2;
-
+    blackKey.position.z = whiteDepth / 2.01 - blackDepth / 2.01; // I have no idea how I made this mistake but in the assignment 2 the black keys were in the front of the keyboard as opposed to being in the back.
     // Cloning the black material so each black key can highlight individually
     blackKey.material = blackMat.clone(`${note}_mat`);
 
