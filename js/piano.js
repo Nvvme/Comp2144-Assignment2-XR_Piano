@@ -39,6 +39,19 @@ function getPlaybackRate(noteName, baseOctave = 4) {
 async function createScene() {
   const scene = new BABYLON.Scene(engine);
 
+  // Adding a UI for note display
+  const gui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI');
+  const noteLabel = new BABYLON.GUI.TextBlock();
+  noteLabel.text = '';
+  noteLabel.color = 'white';
+  noteLabel.fontSize = 48;
+  noteLabel.textHorizontalAlignment =
+    BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+  noteLabel.textVerticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;
+  noteLabel.paddingTop = '20px';
+  noteLabel.alpha = 0;
+  gui.addControl(noteLabel);
+
   // Basic camera
   const camera = new BABYLON.ArcRotateCamera(
     'cam',
@@ -226,6 +239,13 @@ async function createScene() {
     // On click
     mesh.actionManager.registerAction(
       new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, () => {
+        // display the note name
+        noteLabel.text = noteName;
+        noteLabel.alpha = 1;
+        setTimeout(() => {
+          noteLabel.alpha = 0;
+        }, 800);
+
         playNote(noteName);
 
         // Simple press effect
