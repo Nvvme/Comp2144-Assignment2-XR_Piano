@@ -10,6 +10,32 @@ if (!BABYLON.Engine.audioEngine) {
   console.log(' Manually initialized audio engine. :|');
 }
 
+// Alot of trial and error to semitone offsets within an octave
+const semitoneMap = {
+  C: 0,
+  Db: 1,
+  D: 2,
+  Eb: 3,
+  E: 4,
+  F: 5,
+  Gb: 6,
+  G: 7,
+  Ab: 8,
+  A: 9,
+  Bb: 10,
+  B: 11,
+};
+
+// compute playbackRate to shift from baseOctave→targetNote
+function getPlaybackRate(noteName, baseOctave = 4) {
+  const root = noteName.length === 3 ? noteName.slice(0, 2) : noteName[0];
+  const octave = parseInt(noteName.slice(root.length), 10);
+  const targetSemitone = semitoneMap[root] + octave * 12;
+  const baseSemitone = semitoneMap[root] + baseOctave * 12;
+  const diff = targetSemitone - baseSemitone;
+  return Math.pow(2, diff / 12);
+}
+
 async function createScene() {
   const scene = new BABYLON.Scene(engine);
 
@@ -136,6 +162,39 @@ async function createScene() {
     addKeyInteraction(blackKey, note, scene);
   });
 
+  // Added (or trying to add) second octave (C5–B5) by pitch-shifting base samples
+  const whiteKeys5 = ['C5', 'D5', 'E5', 'F5', 'G5', 'A5', 'B5'];
+  whiteKeys5.forEach((note5, i) => {
+    const key = BABYLON.MeshBuilder.CreateBox(
+      `${note5}_whiteKey`,
+      { width: whiteWidth, height: whiteHeight, depth: whiteDepth },
+      scene
+    );
+    key.position.x =
+      startX + 7 * (whiteWidth + keyGap) + i * (whiteWidth + keyGap);
+    key.position.y = 0.4;
+    key.material = whiteMat.clone(`${note5}_mat`);
+    addKeyInteraction(key, note5, scene);
+  });
+  const blackKeys5 = ['Db5', 'Eb5', null, 'Gb5', 'Ab5', 'Bb5', null];
+  blackKeys5.forEach((note5, i) => {
+    if (!note5) return;
+    const bKey = BABYLON.MeshBuilder.CreateBox(
+      `${note5}_blackKey`,
+      { width: blackWidth, height: blackHeight, depth: blackDepth },
+      scene
+    );
+    bKey.position.x =
+      startX +
+      7 * (whiteWidth + keyGap) +
+      (i + 1) * (whiteWidth + keyGap) -
+      (whiteWidth + keyGap) / 2;
+    bKey.position.y = 0.4 + blackHeight / 2;
+    bKey.position.z = whiteDepth / 2 - blackDepth / 2;
+    bKey.material = blackMat.clone(`${note5}_mat`);
+    addKeyInteraction(bKey, note5, scene);
+  });
+
   // Function that sets up highlight and playing the sound
   function addKeyInteraction(mesh, noteName, sceneRef) {
     // Mark the mesh as pickable for VR/desktop clicks
@@ -180,16 +239,20 @@ async function createScene() {
   }
 
   function playNote(note) {
-    const soundUrl = noteAudioMap[note];
+    // determine base sample name and shift
+    const root = note.length === 3 ? note.slice(0, 2) : note[0];
+    const baseSample = root + '4';
+    const soundUrl = noteAudioMap[baseSample];
     if (!soundUrl) return;
+    const rate = getPlaybackRate(note, 4);
     const noteSound = new BABYLON.Sound(
       note + '_sound',
       soundUrl,
       scene,
-      null,
+      () => noteSound.play(),
       {
         volume: 1.0,
-        autoplay: true,
+        playbackRate: rate,
       }
     );
   }
