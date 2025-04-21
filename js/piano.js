@@ -26,14 +26,13 @@ const semitoneMap = {
   B: 11,
 };
 
-// compute playbackRate to shift from baseOctave→targetNote
+// changing some stuff up
 function getPlaybackRate(noteName, baseOctave = 4) {
   const root = noteName.length === 3 ? noteName.slice(0, 2) : noteName[0];
   const octave = parseInt(noteName.slice(root.length), 10);
-  const targetSemitone = semitoneMap[root] + octave * 12;
-  const baseSemitone = semitoneMap[root] + baseOctave * 12;
-  const diff = targetSemitone - baseSemitone;
-  return Math.pow(2, diff / 12);
+  const target = semitoneMap[root] + octave * 12;
+  const base = semitoneMap[root] + baseOctave * 12;
+  return Math.pow(2, (target - base) / 12);
 }
 
 async function createScene() {
@@ -128,23 +127,6 @@ async function createScene() {
   const totalW =
     whiteKeys.length * whiteWidth + (whiteKeys.length - 1) * keyGap;
 
-  // Making the white keys
-  whiteKeys.forEach((note, i) => {
-    const key = BABYLON.MeshBuilder.CreateBox(
-      `${note}_whiteKey`,
-      { width: whiteWidth, height: whiteHeight, depth: whiteDepth },
-      scene
-    );
-    key.position.x = startX + i * (whiteWidth + keyGap);
-    key.position.y = 0.4; // float it a bit above the ground
-
-    // Clone the white material so each key can highlight individually
-    key.material = whiteMat.clone(`${note}_mat`);
-
-    // Add interaction using the full note name (like "C4")
-    addKeyInteraction(key, note + '4', scene);
-  });
-
   // Black key info
   // The null entries mark places where black keys don't exist, like E-F and B-C.
   const blackKeys = ['Db4', 'Eb4', null, 'Gb4', 'Ab4', 'Bb4', null];
@@ -154,58 +136,57 @@ async function createScene() {
     blackDepth = 0.6,
     blackHeight = 0.12;
 
-  // Making the black keys
-  blackKeys.forEach((note, i) => {
-    if (!note) return; // skip if there's no black key in between
+  // adding the entire keyboard now using this logic
+  const noteNames = [
+    'C',
+    'Db',
+    'D',
+    'Eb',
+    'E',
+    'F',
+    'Gb',
+    'G',
+    'Ab',
+    'A',
+    'Bb',
+    'B',
+  ];
+  const octaves = [2, 3, 4, 5, 6];
+  const keyStep = whiteWidth + keyGap;
 
-    const blackKey = BABYLON.MeshBuilder.CreateBox(
-      `${note}_blackKey`,
-      { width: blackWidth, height: blackHeight, depth: blackDepth },
-      scene
-    );
-    // Position it between the white keys, slightly behind
-    blackKey.position.x =
-      startX + (i + 1) * (whiteWidth + keyGap) - (whiteWidth + keyGap) / 2;
-    blackKey.position.y = 0.4 + blackHeight / 2;
-    blackKey.position.z = whiteDepth / 2.01 - blackDepth / 2.01; // I have no idea how I made this mistake but in the assignment 2 the black keys were in the front of the keyboard as opposed to being in the back.
-    // Cloning the black material so each black key can highlight individually
-    blackKey.material = blackMat.clone(`${note}_mat`);
+  // the white keys
+  const totalWhites = whiteKeys.length * octaves.length;
+  const baseX = -(totalWhites * keyStep) / 2 + whiteWidth / 2;
 
-    // Add interaction
-    addKeyInteraction(blackKey, note, scene);
-  });
-
-  // Added (or trying to add) second octave (C5–B5) by pitch-shifting base samples
-  const whiteKeys5 = ['C5', 'D5', 'E5', 'F5', 'G5', 'A5', 'B5'];
-  whiteKeys5.forEach((note5, i) => {
-    const key = BABYLON.MeshBuilder.CreateBox(
-      `${note5}_whiteKey`,
-      { width: whiteWidth, height: whiteHeight, depth: whiteDepth },
-      scene
-    );
-    key.position.x =
-      startX + 7 * (whiteWidth + keyGap) + i * (whiteWidth + keyGap);
-    key.position.y = 0.4;
-    key.material = whiteMat.clone(`${note5}_mat`);
-    addKeyInteraction(key, note5, scene);
-  });
-  const blackKeys5 = ['Db5', 'Eb5', null, 'Gb5', 'Ab5', 'Bb5', null];
-  blackKeys5.forEach((note5, i) => {
-    if (!note5) return;
-    const bKey = BABYLON.MeshBuilder.CreateBox(
-      `${note5}_blackKey`,
-      { width: blackWidth, height: blackHeight, depth: blackDepth },
-      scene
-    );
-    bKey.position.x =
-      startX +
-      7 * (whiteWidth + keyGap) +
-      (i + 1) * (whiteWidth + keyGap) -
-      (whiteWidth + keyGap) / 2;
-    bKey.position.y = 0.4 + blackHeight / 2;
-    bKey.position.z = whiteDepth / 2 - blackDepth / 2;
-    bKey.material = blackMat.clone(`${note5}_mat`);
-    addKeyInteraction(bKey, note5, scene);
+  let whiteIndex = 0;
+  octaves.forEach((oct, oi) => {
+    noteNames.forEach((root, ni) => {
+      const note = root + oct;
+      const isBlack = root.includes('b');
+      const w = isBlack ? blackWidth : whiteWidth;
+      const h = isBlack ? blackHeight : whiteHeight;
+      const d = isBlack ? blackDepth : whiteDepth;
+      const mesh = BABYLON.MeshBuilder.CreateBox(
+        `${note}_${isBlack ? 'black' : 'white'}Key`,
+        { width: w, height: h, depth: d },
+        scene
+      );
+      if (isBlack) {
+        // center between previous and next white keys
+        const lastX = baseX + (whiteIndex - 1) * keyStep;
+        const nextX = baseX + whiteIndex * keyStep;
+        mesh.position.x = (lastX + nextX) / 2;
+        mesh.position.y = 0.4 + blackHeight / 2;
+        mesh.position.z = whiteDepth / 2 - blackDepth / 2;
+      } else {
+        mesh.position.x = baseX + whiteIndex * keyStep;
+        mesh.position.y = 0.4;
+        mesh.position.z = 0;
+        whiteIndex++;
+      }
+      mesh.material = (isBlack ? blackMat : whiteMat).clone(`${note}_mat`);
+      addKeyInteraction(mesh, note, scene);
+    });
   });
 
   // Function that sets up highlight and playing the sound
