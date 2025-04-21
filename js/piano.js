@@ -189,6 +189,19 @@ async function createScene() {
     });
   });
 
+  // Adding a lone C7 key
+  const c7Key = BABYLON.MeshBuilder.CreateBox(
+    'C7_whiteKey',
+    { width: whiteWidth, height: whiteHeight, depth: whiteDepth },
+    scene
+  );
+  // placing it immediately after the existing octaves (7 whites × 5 octaves = 35 slots)
+  c7Key.position.x = baseX + 35 * (whiteWidth + keyGap);
+  c7Key.position.y = 0.4;
+  c7Key.position.z = 0;
+  c7Key.material = whiteMat.clone('C7_mat');
+  addKeyInteraction(c7Key, 'C7', scene);
+
   // Function that sets up highlight and playing the sound
   function addKeyInteraction(mesh, noteName, sceneRef) {
     // Mark the mesh as pickable for VR/desktop clicks
